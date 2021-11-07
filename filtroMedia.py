@@ -10,6 +10,7 @@ def filtroMediaOpenCV(img, kernel_size):
     dst = cv.filter2D(img, -1, kernel)
     return dst
 
+
 def filtroMediaMio(image, kernel_size):
     start = time.time()
     new_image = image.copy()
