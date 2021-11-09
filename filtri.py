@@ -70,6 +70,38 @@ def filtroMediaSlicing(image, kernel_size):
     print("Tempo impiegato con Slicing: ", elapsed)
     return new_image
 
+def calcHist(image):
+    histogram = [0]*256
+    for i in range(0, image.shape[0]):
+        for j in range(0, image.shape[1]):
+            histogram[image[i][j]] += 1
+    return histogram
+
+def filtroMedianaHuang(image, filter_size):
+    '''Applica filtro mediana all'immagine (in bianco e nero) con la tecnica di Huang con complessita O(n)'''
+    histogram = calcHist(image)
+    for i in range(0, image.shape[0]):
+        for j in range(0, image.shape[1]):
+            for k in range(-filter_size/2, filter_size/2):
+                histogram[image[i+k][j-filter_size-1]]-=1
+                histogram[image[i+k][j+filter_size]]+=1
+            image[i][j] = np.median(histogram)   
+    return image, histogram
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 # threshold = 50
 # enchancement = 3.5
