@@ -1,5 +1,5 @@
 import cv2
-
+from filtri import *
 cv2.namedWindow("preview")
 vc = cv2.VideoCapture(0)
 
@@ -9,6 +9,7 @@ else:
     rval = False
 
 while rval:
+    frame = filtroMediaSlicing(frame)
     cv2.imshow("preview", frame)
     rval, frame = vc.read()
     key = cv2.waitKey(20)
