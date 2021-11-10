@@ -104,9 +104,22 @@ def filtroMedianaHuang(image, filter_size):
     return image, histogram
 
 
-
-
-
+def roberts_cross(image, threshold):
+    '''Restituisce una copia dell'immagine con il filtro di Roberts'''
+    new_image = cv.cvtColor(image.copy(), cv.COLOR_BGR2GRAY)
+    new_image = cv.GaussianBlur(new_image, (3,3), 0)
+    kernel1 = np.array([[1, 0], [0, -1]])
+    kernel2 = np.array([[0, 1], [-1, 0]])
+    I_x = cv.filter2D(new_image, -1, kernel1)
+    I_y = cv.filter2D(new_image, -1, kernel2)
+    magnitude = np.sqrt(I_x**2 + I_y**2)
+    for i in range(0, image.shape[0]):
+        for j in range(0, image.shape[1]):
+            if(magnitude[i][j] > threshold):
+                new_image[i][j] = 255
+            else:
+                new_image[i][j] = 0
+    return new_image
 
 
 

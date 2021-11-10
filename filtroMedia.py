@@ -1,4 +1,5 @@
 from math import  floor, ceil
+from PIL.Image import new
 import cv2 as cv
 import numpy as np
 import matplotlib.pyplot as plt
@@ -121,6 +122,36 @@ def filtroMedianaHuang(image, filter_size):
     print("Tempo impiegato filtro mediana: ", round(end-start, 10))   
     return new_image
 
+def gaussianNoise(image, sigma=1):
+    '''Restituisce una copia dell'immagine con rumore gaussiano 
+    
+       image = immagine
+       sigma = deviazione standard [Default=1]
+    '''
+    new_image = image.copy()
+    for i in range(0, image.shape[2]):
+        for i in range(0, image.shape[0]):
+            for j in range(0, image.shape[1]):
+                new_image[i][j] = np.random.normal(image[i][j], sigma)
+    return new_image
+
+def roberts_cross(image, threshold):
+    '''Restituisce una copia dell'immagine con il filtro di Roberts'''
+    new_image = cv.cvtColor(image.copy(), cv.COLOR_BGR2GRAY)
+    new_image = cv.GaussianBlur(new_image, (3,3), 0)
+    kernel1 = np.array([[1, 0], [0, -1]])
+    kernel2 = np.array([[0, 1], [-1, 0]])
+    I_x = cv.filter2D(new_image, -1, kernel1)
+    I_y = cv.filter2D(new_image, -1, kernel2)
+    magnitude = np.sqrt(I_x**2 + I_y**2)
+    for i in range(0, image.shape[0]):
+        for j in range(0, image.shape[1]):
+            if(magnitude[i][j] > threshold):
+                new_image[i][j] = 255
+            else:
+                new_image[i][j] = 0
+    return new_image
+
 
 
 threshold = 50
@@ -128,9 +159,9 @@ enchancement = 3.5
 level = 25
 image = cv.imread(image_name)
 #gray_im = cv.cvtColor(image, cv.COLOR_BGR2GRAY)
-new_image = filtroMedianaSlicingMulti(image, 9)
+new_image = roberts_cross(image, 10)
 plt.subplot(121), plt.imshow(cv.cvtColor(image, cv.COLOR_BGR2RGB)),plt.title('Original') #OpenCv usa BRG invece che RBG, quindi bisogna invertire il colore
-plt.subplot(122), plt.imshow(cv.cvtColor(new_image, cv.COLOR_BGR2RGB)), plt.title('Filtro Media')
+plt.subplot(122), plt.imshow(cv.cvtColor(new_image, cv.COLOR_BGR2RGB)), plt.title('Rumore')
 #plt.subplot(223), plt.imshow(new_image_2, cmap='gray'), plt.title('Filtro Mediana 2')
 #plt.subplot(224), plt.imshow(new_image_3, cmap='gray'), plt.title('Filtro Mediana 3')
 
