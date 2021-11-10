@@ -4,8 +4,7 @@ import cv2 as cv
 import numpy as np
 import matplotlib.pyplot as plt
 import time
-
-from numpy.lib.type_check import imag
+import threading
 
 image_name = 'roma.jpg'
 def filtroMediaOpenCV(img, kernel_size):
@@ -135,8 +134,9 @@ def gaussianNoise(image, sigma=1):
                 new_image[i][j] = np.random.normal(image[i][j], sigma)
     return new_image
 
-def roberts_cross(image, threshold):
+def __roberts_crossOLD(image, threshold):
     '''Restituisce una copia dell'immagine con il filtro di Roberts'''
+    start = time.time()
     new_image = cv.cvtColor(image.copy(), cv.COLOR_BGR2GRAY)
     new_image = cv.GaussianBlur(new_image, (3,3), 0)
     kernel1 = np.array([[1, 0], [0, -1]])
@@ -150,6 +150,23 @@ def roberts_cross(image, threshold):
                 new_image[i][j] = 255
             else:
                 new_image[i][j] = 0
+    end = time.time()
+    print("Tempo impiegato filtro mediana: ", round(end-start, 10))   
+    return new_image
+def roberts_cross(image, threshold):
+    '''Restituisce una copia dell'immagine con il filtro di Roberts'''
+    start = time.time()
+    new_image = cv.cvtColor(image.copy(), cv.COLOR_BGR2GRAY)
+    new_image = cv.GaussianBlur(new_image, (3,3), 0)
+    kernel1 = np.array([[1, 0], [0, -1]])
+    kernel2 = np.array([[0, 1], [-1, 0]])
+    I_x = cv.filter2D(new_image, -1, kernel1)
+    I_y = cv.filter2D(new_image, -1, kernel2)
+    magnitude = np.sqrt(I_x**2 + I_y**2)
+    new_image[magnitude < threshold] = 0
+    new_image[magnitude >= threshold] = 255
+    end = time.time()
+    print("Tempo impiegato filtro mediana: ", round(end-start, 10))   
     return new_image
 
 
@@ -159,7 +176,7 @@ enchancement = 3.5
 level = 25
 image = cv.imread(image_name)
 #gray_im = cv.cvtColor(image, cv.COLOR_BGR2GRAY)
-new_image = roberts_cross(image, 10)
+new_image = roberts_cross(image, 12)
 plt.subplot(121), plt.imshow(cv.cvtColor(image, cv.COLOR_BGR2RGB)),plt.title('Original') #OpenCv usa BRG invece che RBG, quindi bisogna invertire il colore
 plt.subplot(122), plt.imshow(cv.cvtColor(new_image, cv.COLOR_BGR2RGB)), plt.title('Rumore')
 #plt.subplot(223), plt.imshow(new_image_2, cmap='gray'), plt.title('Filtro Mediana 2')

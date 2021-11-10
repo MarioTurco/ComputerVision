@@ -104,8 +104,9 @@ def filtroMedianaHuang(image, filter_size):
     return image, histogram
 
 
-def roberts_cross(image, threshold):
+def roberts_cross(image, threshold, print_elapsed_time=False):
     '''Restituisce una copia dell'immagine con il filtro di Roberts'''
+    start = time.time()
     new_image = cv.cvtColor(image.copy(), cv.COLOR_BGR2GRAY)
     new_image = cv.GaussianBlur(new_image, (3,3), 0)
     kernel1 = np.array([[1, 0], [0, -1]])
@@ -113,14 +114,29 @@ def roberts_cross(image, threshold):
     I_x = cv.filter2D(new_image, -1, kernel1)
     I_y = cv.filter2D(new_image, -1, kernel2)
     magnitude = np.sqrt(I_x**2 + I_y**2)
-    for i in range(0, image.shape[0]):
-        for j in range(0, image.shape[1]):
-            if(magnitude[i][j] > threshold):
-                new_image[i][j] = 255
-            else:
-                new_image[i][j] = 0
+    new_image[magnitude < threshold] = 0
+    new_image[magnitude >= threshold] = 255
+    end = time.time()
+    if print_elapsed_time:
+        print("Tempo impiegato Robert Cross: ", round(end-start, 10))   
     return new_image
 
+def sobel_edge_detection(image, threshold, print_elapsed_time=False):
+    '''Restituisce una copia dell'immagine con il filtro di Roberts'''
+    start = time.time()
+    new_image = cv.cvtColor(image.copy(), cv.COLOR_BGR2GRAY)
+    new_image = cv.GaussianBlur(new_image, (3,3), 0)
+    kernel2 = np.array([[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]])
+    kernel1 = np.array([[1, 2, 1], [0, 0, 0], [-1, -2, -1]])
+    I_x = cv.filter2D(new_image, -1, kernel1)
+    I_y = cv.filter2D(new_image, -1, kernel2)
+    magnitude = np.sqrt(I_x**2 + I_y**2)
+    new_image[magnitude < threshold] = 0
+    new_image[magnitude >= threshold] = 255
+    end = time.time()
+    if print_elapsed_time:
+        print("Tempo impiegato Sobel: ", round(end-start, 10))   
+    return new_image
 
 
 
