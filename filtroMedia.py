@@ -6,7 +6,7 @@ import time
 
 from numpy.lib.type_check import imag
 
-image_name = 'noise.jpeg'
+image_name = 'roma.jpg'
 def filtroMediaOpenCV(img, kernel_size):
     kernel = np.ones((kernel_size, kernel_size), np.float32)/(kernel_size**2)
     dst = cv.filter2D(img, -1, kernel)
@@ -74,6 +74,22 @@ def filtroMediaSlicing(image, kernel_size):
     print("Tempo impiegato con Slicing: ", elapsed)
     return new_image
 
+def filtroMedianaSlicingMulti(image, kernel_size):
+    '''Filtro media implementato tramite slicing'''
+    start = time.time()
+    new_image = image.copy()
+    a = floor((kernel_size - 1)/2)
+    b = floor((kernel_size - 1)/2)
+    for d in range(0,image.shape[2]):
+        for i in range(0, image.shape[0]):
+            for j in range(0, image.shape[1]):
+                new_image[i][j][d] = np.median(new_image[i-a:i+a+1, j-b:j+b+1,d]) 
+    end = time.time()
+    elapsed = round(end-start, 10)
+    print("Tempo impiegato con Slicing: ", elapsed)
+    return new_image
+
+
 
 def calcHist(image):
     histogram = [0]*256
@@ -85,6 +101,7 @@ def calcHist(image):
                 histogram[image[i][j]] += 1
     return histogram
 
+#TODO correggere
 def filtroMedianaHuang(image, filter_size):
     '''Applica filtro mediana all'immagine (in bianco e nero) con la tecnica di Huang con complessita O(n)'''
     start = time.time()
@@ -98,11 +115,11 @@ def filtroMedianaHuang(image, filter_size):
                 else:
                     histogram[image[i+k][j-filter_size-1]]-=1
                     histogram[image[i+k][j+filter_size]]+=1
-            hist2 = histogram.copy()
-            new_image[i][j] = np.median(hist2)
+            
+            new_image[i][j] = np.median(histogram)
     end = time.time()
-    print("Tempo impiegato senza slicing: ", round(end-start, 10))   
-    return image
+    print("Tempo impiegato filtro mediana: ", round(end-start, 10))   
+    return new_image
 
 
 
@@ -110,12 +127,13 @@ threshold = 50
 enchancement = 3.5
 level = 25
 image = cv.imread(image_name)
-gray_im = cv.cvtColor(image, cv.COLOR_BGR2GRAY)
-new_image = filtroMedianaHuang(gray_im, 9)
-#new_image_2 = filtroMediaOpenCV(gray_im, 9)
-plt.subplot(222), plt.imshow(cv.cvtColor(image, cv.COLOR_BGR2RGB)),plt.title('Original') #OpenCv usa BRG invece che RBG, quindi bisogna invertire il colore
-plt.subplot(221), plt.imshow(new_image, cmap='gray'), plt.title('Filtro Mediana')
-#plt.subplot(223), plt.imshow(new_image_2, cmap='gray'), plt.title('Filtro Media')
+#gray_im = cv.cvtColor(image, cv.COLOR_BGR2GRAY)
+new_image = filtroMedianaSlicingMulti(image, 9)
+plt.subplot(121), plt.imshow(cv.cvtColor(image, cv.COLOR_BGR2RGB)),plt.title('Original') #OpenCv usa BRG invece che RBG, quindi bisogna invertire il colore
+plt.subplot(122), plt.imshow(cv.cvtColor(new_image, cv.COLOR_BGR2RGB)), plt.title('Filtro Media')
+#plt.subplot(223), plt.imshow(new_image_2, cmap='gray'), plt.title('Filtro Mediana 2')
+#plt.subplot(224), plt.imshow(new_image_3, cmap='gray'), plt.title('Filtro Mediana 3')
+
 plt.show()
 # plt.subplot(221), plt.imshow(gray_im, cmap='gray'), plt.title('Gray')
 # plt.subplot(222), plt.imshow(cv.cvtColor(image, cv.COLOR_BGR2RGB)),plt.title('Original') #OpenCv usa BRG invece che RBG, quindi bisogna invertire il colore

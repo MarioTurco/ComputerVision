@@ -1,6 +1,6 @@
 from time import sleep
 import cv2
-from filtri import *
+from computer_vision import *
 
 cv2.waitKey(0)
 cv2.namedWindow("preview")
@@ -12,6 +12,7 @@ else:
     rval = False
 
 while rval:
+    frame = thresholding(frame, 70)
     cv2.imshow("preview", frame)
     rval, frame = cam.read()
     key = cv2.waitKey(20)
