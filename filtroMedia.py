@@ -4,9 +4,10 @@ import cv2 as cv
 import numpy as np
 import matplotlib.pyplot as plt
 import time
-import threading
 
-image_name = 'roma.jpg'
+from numpy.lib.type_check import imag
+
+image_name = 'gatto.jpg'
 def filtroMediaOpenCV(img, kernel_size):
     kernel = np.ones((kernel_size, kernel_size), np.float32)/(kernel_size**2)
     dst = cv.filter2D(img, -1, kernel)
@@ -169,20 +170,97 @@ def roberts_cross(image, threshold):
     print("Tempo impiegato filtro mediana: ", round(end-start, 10))   
     return new_image
 
+def non_maxima_suppressione(image):
+    kernel1 = np.array([[1, 0], [0, -1]])
+    kernel2 = np.array([[0, 1], [-1, 0]])
+    I_x = cv.filter2D(image, -1, kernel1)
+    I_y = cv.filter2D(image, -1, kernel2)
+    magnitude = np.sqrt(I_x**2 + I_y**2)
+    orientation = np.arctan2(I_y, I_x)
+    orientation = orientation * 180. / np.pi
+    orientation[orientation<0]+=180 #portiamo tutti gli angoli negativi in angoli positivi 
+                                    #per ridurre il numero di if 
+    q = 255
+    r = 255
+    for i in range(0, image.shape[0]-1):
+        for j in range(0, image.shape[1]-1):
+            #0 gradi
+            if 0 <= orientation[i][j] < 22.5 :
+                q = image[i,j+1]
+                r = image[i,j-1]
+            elif 157.5 <= orientation[i,j] <= 180:
+                q = image[i,j+1]
+                r = image[i,j-1]
+            #45 gradi
+            elif 22.5<= orientation[i,j] < 67.5 :
+                q = image[i+1,j-1]
+                r = image[i-1,j+1]
+            #90 gradi
+            elif 67.5 <= orientation[i,j] < 125:
+                q = image[i+1,j]
+                r = image[i-1,j]
+            #135 gradi
+            elif 112.5 <= orientation[i,j] < 157.5:
+                q = image[i-1,j-1]
+                r  = image[i+1, j+1]
+                    
+            if magnitude[i,j] < q and magnitude[i,j] < r:
+                image[i,j] = 0
 
+    return image
+
+def hysteresis(image, strong, weak):
+    for i in range(0, image.shape[0]-1):
+        for j in range(0, image.shape[1]-1):
+            if(image[i,j]==weak):
+                if(image[i+1,j]==strong or image[i-1,j]==strong or image[i,j+1]==strong or image[i,j-1]==strong or
+                image[i+1,j+1]==strong or image[i+1,j-1]==strong or
+                image[i-1,j+1]==strong or image[i-1,j-1]==strong):
+                    image[i,j]=strong
+    return image
+
+
+def hysteresis_thresholding(image, highThreshold, lowThreshold): #double thresholding
+    '''Tramite due soglie di thresholding rileva i pixel forti, deboli e non rilevanti.
+       In seguito trasforma i pixel deboli in forti se sono adiacenti a pixel forti
+       ed ignora i pixel non rilevanti
+    '''
+    new_image=image.copy()
+    weak_value = 25
+    strong_value = 255
+    strong_x, strong_y = np.where(image >= highThreshold)
+    weak_x, weak_y = np.where(image >=lowThreshold and image <= highThreshold)
+    non_relevant_x, non_relevant_y = np.where(image < lowThreshold)
+    new_image[weak_x, weak_y]= weak_value
+    new_image[strong_x, strong_y]= strong_value
+    new_image[non_relevant_x, non_relevant_y]=0
+    new_image = hysteresis(new_image, weak_value, strong_value)
+    return new_image
+
+#TODO continuare 
+def cannys_detect(image, highThreshold, lowThreshold):
+    new_image = image.copy()
+    new_image = cv.GaussianBlur(new_image, (3,3), 0)
+    new_image = non_maxima_suppressione(new_image)
+    new_image = hysteresis_thresholding(new_image, highThreshold, lowThreshold)
+    
+    return new_image
 
 threshold = 50
 enchancement = 3.5
 level = 25
 image = cv.imread(image_name)
 #gray_im = cv.cvtColor(image, cv.COLOR_BGR2GRAY)
-new_image = roberts_cross(image, 12)
-plt.subplot(121), plt.imshow(cv.cvtColor(image, cv.COLOR_BGR2RGB)),plt.title('Original') #OpenCv usa BRG invece che RBG, quindi bisogna invertire il colore
-plt.subplot(122), plt.imshow(cv.cvtColor(new_image, cv.COLOR_BGR2RGB)), plt.title('Rumore')
+lowThreshold = 10
+highThreshold = 15
+new_image = cv.cvtColor(image, cv.COLOR_BGR2GRAY)
+new_image = cannys_detect(image, highThreshold, lowThreshold)
+# plt.subplot(121), plt.imshow(cv.cvtColor(image, cv.COLOR_BGR2RGB)),plt.title('Original') #OpenCv usa BRG invece che RBG, quindi bisogna invertire il colore
+# plt.subplot(122), plt.imshow(cv.cvtColor(new_image, cv.COLOR_BGR2RGB)), plt.title('Rumore')
 #plt.subplot(223), plt.imshow(new_image_2, cmap='gray'), plt.title('Filtro Mediana 2')
 #plt.subplot(224), plt.imshow(new_image_3, cmap='gray'), plt.title('Filtro Mediana 3')
 
-plt.show()
+# plt.show()
 # plt.subplot(221), plt.imshow(gray_im, cmap='gray'), plt.title('Gray')
 # plt.subplot(222), plt.imshow(cv.cvtColor(image, cv.COLOR_BGR2RGB)),plt.title('Original') #OpenCv usa BRG invece che RBG, quindi bisogna invertire il colore
 # plt.subplot(223), plt.imshow(filtroMediaMio(gray_im, kernel_size), cmap='gray'), plt.title('Filtro Media Senza Slice ' +   str(kernel_size) +"x" + str(kernel_size))

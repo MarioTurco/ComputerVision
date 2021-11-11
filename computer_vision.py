@@ -125,7 +125,7 @@ def sobel_edge_detection(image, threshold, print_elapsed_time=False):
     '''Restituisce una copia dell'immagine con il filtro di Roberts'''
     start = time.time()
     new_image = cv.cvtColor(image.copy(), cv.COLOR_BGR2GRAY)
-    new_image = cv.GaussianBlur(new_image, (3,3), 0)
+    new_image = cv.GaussianBlur(new_image, (7,7), 3)
     kernel2 = np.array([[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]])
     kernel1 = np.array([[1, 2, 1], [0, 0, 0], [-1, -2, -1]])
     I_x = cv.filter2D(new_image, -1, kernel1)
